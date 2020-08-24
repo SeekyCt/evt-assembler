@@ -36,55 +36,50 @@ for line in f.readlines():
     if len(line) == 0:
         continue
 
-    # Split operands, strip whitespace and commas
     s = line.split()
-    for i in range(0, len(s)):
-        s[i] = s[i].strip()
-        if s[i][-1] == ',':
-            s[i] = s[i][:-1]
-
-    # halfword cmdn
-    # halfword cmd
-    opname = s[0].lower()
+    opname = s.pop(0).lower()
     assert opname in opcodesR, f"Unrecognised opcode '{opname}' on line {linenum}"
     cmd = opcodesR[opname]
-    cmdn = len(s) - 1
+    cmdn = len(s)
     assert cmdn < 0xffff, f"Too many operands on line {linenum}, must be under 0xffff"
     output += f"{hex((cmdn << 16) | cmd)}, "
     length += 4
+    for i in range(0, cmdn):
+        operand = s[i].strip()
+        if operand[-1] == ',':
+            operand = operand[:-1]
 
-    # word[cmdn] data
-    for i in range(1, cmdn + 1):
-        operand = s[i]
+        if '.' in operand:
+            # float function
+            o = float(operand) * 1024 + typeBases['Float']
 
-        if operand[0].isdigit():
-            if '.' in operand:
-                # float function
-                o = float(operand) * 1024 + typeBases['float']
-
-                # float to binary in unsigned int
-                output += f"{hex(struct.unpack('>I', struct.pack('>f', )[0]))}, "
-            else:
-                # let the unsigned int stay
-                output += f"{operand}, "
-        elif operand[0] == '-':
-            # signed int to unsigned
-            if operand.startswith("0x"):
-                o = int(operand[2:], 16)
-            else:
-                o = int(operand)
-            output += f"{hex(struct.unpack('>I', struct.pack('>i', o))[0])}, "
+            # float to binary in unsigned int
+            output += f"{hex(struct.unpack('>I', struct.pack('>i', int(o)))[0])}, "
+        elif operand[0].isdigit():
+            # let the unsigned int stay
+            output += f"{operand}, "
         else:
-            print(f"function op: {operand}")            
+            # signed int to unsigned
+            if operand[0] == '-':
+                if operand.startswith("0x"):
+                    o = int(operand[2:], 16)
+                else:
+                    o = int(operand)
+            else:
+                # expression type macros
+                _s = operand.split("(")
+                t = _s[0]
+                o = int(_s[1][:-1]) + typeBases[t] # remove )
 
+            output += f"{hex(struct.unpack('>I', struct.pack('>i', o))[0])}, "
 
         length += 4
-
 
 output = output[:-2]
 output += "};"
 
 print(output)
+print(length)
 
 if config.toFile:
     out.close()
