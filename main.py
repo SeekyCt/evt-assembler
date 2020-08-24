@@ -1,4 +1,4 @@
-import sys, struct
+import struct
 from config import Config
 from opcodes import opcodes, opcodesR
 
@@ -18,10 +18,11 @@ typeBases = {
 }
 
 config = Config.getStaticInstance()
-if config.toFile:
-    out = open(config.outPath, 'w')
 
-output = "unsigned int script[] = {"
+if config.asm:
+    output = ".globl script\nscript:\n"
+else:
+    output = "unsigned int script[] = {"
 
 f = open(config.inPath)
 length = 0
@@ -42,7 +43,10 @@ for line in f.readlines():
     cmd = opcodesR[opname]
     cmdn = len(s)
     assert cmdn < 0xffff, f"Too many operands on line {linenum}, must be under 0xffff"
-    output += f"{hex((cmdn << 16) | cmd)}, "
+    if config.asm:
+        output += f".short {cmdn}\n.short {cmd}\n"
+    else:
+        output += f"{hex((cmdn << 16) | cmd)}, "
     length += 4
     for i in range(0, cmdn):
         operand = s[i].strip()
@@ -54,10 +58,10 @@ for line in f.readlines():
             o = float(operand) * 1024 + typeBases['Float']
 
             # float to binary in unsigned int
-            output += f"{hex(struct.unpack('>I', struct.pack('>i', int(o)))[0])}, "
+            nextword = hex(struct.unpack('>I', struct.pack('>i', int(o)))[0])
         elif operand[0].isdigit():
             # let the unsigned int stay
-            output += f"{operand}, "
+            nextword = operand
         else:
             # signed int to unsigned
             if operand[0] == '-':
@@ -69,18 +73,27 @@ for line in f.readlines():
                 # expression type macros
                 _s = operand.split("(")
                 t = _s[0]
+                assert not t in ['Address', 'Float'], "Address and Float are not meant to be used as expression macros"
                 o = int(_s[1][:-1]) + typeBases[t] # remove )
 
-            output += f"{hex(struct.unpack('>I', struct.pack('>i', o))[0])}, "
+            nextword = hex(struct.unpack('>I', struct.pack('>i', o))[0])
+        
+        if config.asm:
+            output += f".long {nextword}\n"
+        else:
+            output += f"{nextword}, "
 
         length += 4
 
-output = output[:-2]
-output += "};"
-
-print(output)
-print(length)
-
+if not config.asm:
+    output = output[:-2]
+    output += "};"
 if config.toFile:
+    out = open(config.outPath, 'w')
+    out.write(output)
     out.close()
+else:
+    print(output)
+print(f"Assembled script with length {hex(length)} bytes")
+
 Config.destroyStaticInstance()

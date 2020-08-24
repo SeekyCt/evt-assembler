@@ -15,7 +15,7 @@ class Config:
         parser = argparse.ArgumentParser()
         parser.add_argument("--infile", "-i")
         parser.add_argument("--outfile", "-o")
-        parser.add_argument("--binary", "-b", action="store_true")
+        parser.add_argument("--assembly", "-a", action="store_true")
         args = parser.parse_args()
         
         # --infile path, -o path
@@ -34,6 +34,6 @@ class Config:
             self.toFile = False
             self.outPath = None
 
-        # --binary, -b
-        # Outputs to direct binary instead of code
-        self.binary = args.binary
+        # --assembly, -a
+        # Outputs asm pseudo-ops instead of a C array
+        self.asm = args.assembly
