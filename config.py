@@ -15,6 +15,7 @@ class Config:
         parser = argparse.ArgumentParser()
         parser.add_argument("--infile", "-i")
         parser.add_argument("--outfile", "-o")
+        parser.add_argument("--symbol", "-s")
         parser.add_argument("--assembly", "-a", action="store_true")
         args = parser.parse_args()
         
@@ -33,6 +34,13 @@ class Config:
         else:
             self.toFile = False
             self.outPath = None
+
+        # --symbol name
+        # Sets the name for the symbol created
+        if args.symbol is None:
+            self.outName = "script"
+        else:
+            self.outName = args.symbol
 
         # --assembly, -a
         # Outputs asm pseudo-ops instead of a C array

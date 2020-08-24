@@ -20,9 +20,9 @@ typeBases = {
 config = Config.getStaticInstance()
 
 if config.asm:
-    output = ".globl script\nscript:\n"
+    output = f".globl {config.outName}\n{config.outName}:\n"
 else:
-    output = "unsigned int script[] = {"
+    output = f"unsigned int {config.outName}[] = {{"
 
 f = open(config.inPath)
 length = 0
@@ -37,6 +37,8 @@ for line in f.readlines():
     if len(line) == 0:
         continue
 
+    # halfword cmdn
+    # halfword cmd
     s = line.split()
     opname = s.pop(0).lower()
     assert opname in opcodesR, f"Unrecognised opcode '{opname}' on line {linenum}"
@@ -48,27 +50,25 @@ for line in f.readlines():
     else:
         output += f"{hex((cmdn << 16) | cmd)}, "
     length += 4
+
+    # word[cmdn] data
     for i in range(0, cmdn):
+        # Remove and whitespace and comma if present
         operand = s[i].strip()
         if operand[-1] == ',':
             operand = operand[:-1]
 
         if '.' in operand:
-            # float function
+            # float conversion
             o = float(operand) * 1024 + typeBases['Float']
-
-            # float to binary in unsigned int
             nextword = hex(struct.unpack('>I', struct.pack('>i', int(o)))[0])
         elif operand[0].isdigit():
-            # let the unsigned int stay
+            # a positive integer can become a uint with no change, hex will work by default
             nextword = operand
         else:
             # signed int to unsigned
             if operand[0] == '-':
-                if operand.startswith("0x"):
-                    o = int(operand[2:], 16)
-                else:
-                    o = int(operand)
+                o = int(operand)
             else:
                 # expression type macros
                 _s = operand.split("(")
