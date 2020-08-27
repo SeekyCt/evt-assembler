@@ -16,32 +16,32 @@ class Config:
         parser.add_argument("--infile", "-i")
         parser.add_argument("--outfile", "-o")
         parser.add_argument("--symbol", "-s")
-        parser.add_argument("--assembly", "-a", action="store_true")
+        parser.add_argument("--binary", "-b", action="store_true")
         args = parser.parse_args()
         
-        # --infile path, -o path
+        # --infile path, -i path
         # Path to the text file containing the evt script
-        if args.infile is not None:
-            self.inPath = args.infile
-        else:
+        if args.infile is None:
             self.inPath = input("script path: ")
+        else:
+            self.inPath = args.infile
 
         # --outfile path, -o path
-        # Disassembly is stored to a text file instead of being printed to the console
-        if args.outfile is not None:
-            self.toFile = True
-            self.outPath = args.outfile
-        else:
+        # Output is stored to a file instead of being printed to the console
+        if args.outfile is None:
             self.toFile = False
             self.outPath = None
-
-        # --symbol name
-        # Sets the name for the symbol created
-        if args.symbol is None:
-            self.outName = "script"
         else:
-            self.outName = args.symbol
+            self.toFile = True
+            self.outPath = args.outfile
 
-        # --assembly, -a
-        # Outputs asm pseudo-ops instead of a C array
-        self.asm = args.assembly
+        # --symbol name, -s name
+        # Sets the name for the symbol created (ignored for binary format)
+        if args.symbol is None:
+            self.symbol = "script"
+        else:
+            self.symbol = args.symbol
+
+        # --binary, -b
+        # Makes the output plain binary (or hex in the console if no outfile is specified) instead of a C/C++ array
+        self.binary = args.binary
