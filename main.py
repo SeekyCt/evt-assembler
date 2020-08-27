@@ -18,15 +18,15 @@ typeBases = {
 }
 
 def appendBytes(bArray, size, val):
-    mx = 8 * (size -1)
+    maxShift = 8 * (size - 1)
     for i in range(0, size):
-        bArray.append(val >> (mx - i * 8) & 0xff)
+        bArray.append(val >> (maxShift - i * 8) & 0xff)
 
 config = Config.getStaticInstance()
 output = bytearray()
 linenum = 0
-f = open(config.inPath)
-for line in f.readlines():
+infile = open(config.inPath)
+for line in infile.readlines():
     linenum += 1
 
     if line[0] == '8': # Remove address labels
@@ -35,17 +35,17 @@ for line in f.readlines():
     if len(line) == 0:
         continue
 
-    s = line.split()
-    opname = s.pop(0).lower()
+    split = line.split()
+    opname = split.pop(0).lower()
     assert opname in opcodesR, f"Unrecognised opcode '{opname}' on line {linenum}"
     cmd = opcodesR[opname]
-    cmdn = len(s)
+    cmdn = len(split)
     assert cmdn < 0xffff, f"cmdn out of range on line {linenum}"
     appendBytes(output, 2, cmdn)
     appendBytes(output, 2, cmd)
 
     for i in range(0, cmdn):
-        operand = s[i].strip()
+        operand = split[i].strip()
         if operand[-1] == ',':
             operand = operand[:-1]
 
@@ -62,22 +62,22 @@ for line in f.readlines():
                     val = int(operand)
                 else:
                     # expression type macros
-                    _s = operand.split("(")
-                    macro = _s[0]
+                    splitOperand = operand.split("(")
+                    macro = splitOperand[0]
                     assert macro in typeBases, f"Unable to parse operand '{operand}' on line {linenum}"
                     assert not macro in ['Address', 'Float'], f"Address and Float are not meant to be used as expression macros (line {linenum})"
-                    val = typeBases[macro] + int(_s[1][:-1]) # remove )
+                    val = typeBases[macro] + int(splitOperand[1][:-1]) # remove )
             if val < 0:
                 val = struct.unpack('>I', struct.pack('>i', val))[0]
         assert 0 <= val <= 0xffffffff, f"Operand '{operand}' out of range on line {linenum}"
         appendBytes(output, 4, val)
-f.close()
+infile.close()
 
 if config.binary:
     if config.toFile:
-        f = open(config.outPath, 'wb')
-        f.write(output)
-        f.close()
+        outfile = open(config.outPath, 'wb')
+        outfile.write(output)
+        outfile.close()
     else:
         n = 0
         for i in range(0, len(output), 4):
@@ -99,9 +99,9 @@ else:
     s = s[:-2] + "};"
 
     if config.toFile:
-        f = open(config.outPath, 'w')
-        f.write(s)
-        f.close()
+        outfile = open(config.outPath, 'w')
+        outfile.write(s)
+        outfile.close()
     else:
         print(s)
 print(f"\nAssembled script with length {hex(len(output))} bytes")
