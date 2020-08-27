@@ -17,11 +17,6 @@ typeBases = {
     'LW': -30000000
 }
 
-def appendBytes(bArray, size, val):
-    maxShift = 8 * (size - 1)
-    for i in range(0, size):
-        bArray.append(val >> (maxShift - i * 8) & 0xff)
-
 config = Config.getStaticInstance()
 output = bytearray()
 linenum = 0
@@ -41,9 +36,9 @@ for line in infile.readlines():
     cmd = opcodesR[opname]
     cmdn = len(split)
     assert cmdn < 0xffff, f"cmdn out of range on line {linenum}"
-    appendBytes(output, 2, cmdn)
-    appendBytes(output, 2, cmd)
-
+    output += int.to_bytes(cmdn, 2, 'big')
+    output += int.to_bytes(cmd, 2, 'big')
+    
     for i in range(0, cmdn):
         operand = split[i].strip()
         if operand[-1] == ',':
@@ -70,7 +65,7 @@ for line in infile.readlines():
             if val < 0:
                 val = struct.unpack('>I', struct.pack('>i', val))[0]
         assert 0 <= val <= 0xffffffff, f"Operand '{operand}' out of range on line {linenum}"
-        appendBytes(output, 4, val)
+        output += int.to_bytes(val, 4, 'big')
 infile.close()
 
 if config.binary:
