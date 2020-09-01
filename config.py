@@ -1,21 +1,12 @@
 import argparse
 
 class Config:
-    _sInstance = None
-    @staticmethod
-    def getStaticInstance():
-        if Config._sInstance is None:
-            Config._sInstance = Config()
-        return Config._sInstance
-    @staticmethod
-    def destroyStaticInstance():
-        del Config._sInstance
-
     def __init__(self):
         parser = argparse.ArgumentParser()
         parser.add_argument("--infile", "-i")
         parser.add_argument("--outfile", "-o")
         parser.add_argument("--symbol", "-s")
+        parser.add_argument("--map", "-m")
         parser.add_argument("--binary", "-b", action="store_true")
         args = parser.parse_args()
         
@@ -42,6 +33,18 @@ class Config:
         else:
             self.symbol = args.symbol
 
+        # --map path, -m path
+        # Path to a symbol map, will be used 
+        # Ex. 80e4a688 for aa1_01_init_evt
+        if args.map is not None:
+            self.useMap = True
+            self.mapPath = args.map
+        else:
+            self.useMap = False
+            self.mapPath = None
+
         # --binary, -b
         # Makes the output plain binary (or hex in the console if no outfile is specified) instead of a C/C++ array
         self.binary = args.binary
+
+config = Config()

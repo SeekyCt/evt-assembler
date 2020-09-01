@@ -1,6 +1,7 @@
 import struct
-from config import Config
+from config import config
 from opcodes import opcodes, opcodesR
+from symbols import symbolMap
 
 typeBases = {
     'Address': -270000000,
@@ -17,7 +18,6 @@ typeBases = {
     'LW': -30000000
 }
 
-config = Config.getStaticInstance()
 output = bytearray()
 linenum = 0
 infile = open(config.inPath)
@@ -55,13 +55,18 @@ for line in infile.readlines():
                 if operand[0] == '-' or operand[0].isdigit():
                     # signed int immediate
                     val = int(operand)
-                else:
+                elif '(' in operand:
                     # expression type macros
                     splitOperand = operand.split("(")
                     macro = splitOperand[0]
                     assert macro in typeBases, f"Unable to parse operand '{operand}' on line {linenum}"
                     assert not macro in ['Address', 'Float'], f"Address and Float are not meant to be used as expression macros (line {linenum})"
                     val = typeBases[macro] + int(splitOperand[1][:-1]) # remove )
+                elif config.useMap:
+                    assert symbolMap.hasName(operand), f"Unable to parse operand {operand} on line {linenum}"
+                    val = symbolMap.getAddress(operand)
+                else:
+                    assert 0, f"Unable to parse operand {operand} on line {linenum} (Did you forget to use --map?)"
             if val < 0:
                 val = struct.unpack('>I', struct.pack('>i', val))[0]
         assert 0 <= val <= 0xffffffff, f"Operand '{operand}' out of range on line {linenum}"
@@ -100,5 +105,3 @@ else:
     else:
         print(s)
 print(f"\nAssembled script with length {hex(len(output))} bytes")
-
-Config.destroyStaticInstance()
