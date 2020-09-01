@@ -13,6 +13,9 @@ Path to the file to store the result to (will print to console if not specified,
 ### --symbol name, -s name
 Sets the symbol name for the array created (ignored for binary format)
 
+### --map path, -m path
+Path to the symbol map to look up named symbol operands from
+
 ### --binary, -b
 Makes the output plain binary (or hex if printing to console) instead of a C/C++ array
 
