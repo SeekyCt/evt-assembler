@@ -33,5 +33,4 @@ A hash can be used to comment out the rest of a line
 - ttyd-asm instruction name support
 
 ## Credits
-This is heavily based off of the research done by everyone involved in the creation of ttyd-asm
-https://github.com/PistonMiner/ttyd-tools
+This is heavily based off of the research done by everyone involved in the creation of [ttyd-asm](https://github.com/PistonMiner/ttyd-tools)
